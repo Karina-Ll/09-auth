@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fetchNoteById } from "../../../lib/api";
+import { fetchNoteById } from "../../../lib/api/serverApi";
 import NotePreview from "../../../components/NotePreview/NotePreview";
 import css from "./NoteDetails.module.css";
 
