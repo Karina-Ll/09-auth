@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { checkSession } from "./lib/api/serverApi";
 
 const PRIVATE_ROUTES = ["/profile", "/notes"];
 const AUTH_ROUTES = ["/sign-in", "/sign-up"];
@@ -17,9 +16,26 @@ export async function proxy(request: NextRequest) {
     if (!accessToken && !refreshToken) {
       return NextResponse.redirect(new URL("/sign-in", request.url));
     }
+
     if (!accessToken && refreshToken) {
       try {
-        await checkSession();
+        const baseURL = process.env.NEXT_PUBLIC_API_URL + "/api";
+        const res = await fetch(`${baseURL}/auth/session`, {
+          headers: { Cookie: `refreshToken=${refreshToken}` },
+        });
+
+        if (!res.ok) {
+          return NextResponse.redirect(new URL("/sign-in", request.url));
+        }
+
+        const setCookieHeader = res.headers.get("set-cookie");
+        const response = NextResponse.next();
+
+        if (setCookieHeader) {
+          response.headers.set("set-cookie", setCookieHeader);
+        }
+
+        return response;
       } catch {
         return NextResponse.redirect(new URL("/sign-in", request.url));
       }
