@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getMe, updateMe } from "../../../../lib/api/clientApi";
+import { useAuthStore } from "../../../../lib/store/authStore";
 import type { User } from "../../../../types/user";
 import css from "./page.module.css";
 
@@ -11,6 +12,7 @@ export default function EditProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState("");
   const router = useRouter();
+  const setStoreUser = useAuthStore((s) => s.setUser);
 
   useEffect(() => {
     getMe().then((data) => {
@@ -21,7 +23,8 @@ export default function EditProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await updateMe({ username });
+    const updated = await updateMe({ username });
+    setStoreUser(updated);
     router.push("/profile");
   };
 
@@ -51,8 +54,14 @@ export default function EditProfilePage() {
           </div>
           <p>Email: {user.email}</p>
           <div className={css.actions}>
-            <button type="submit" className={css.saveButton}>Save</button>
-            <button type="button" className={css.cancelButton} onClick={() => router.push("/profile")}>
+            <button type="submit" className={css.saveButton}>
+              Save
+            </button>
+            <button
+              type="button"
+              className={css.cancelButton}
+              onClick={() => router.push("/profile")}
+            >
               Cancel
             </button>
           </div>

@@ -1,9 +1,8 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "../../lib/store/authStore";
-import { checkSession } from "../../lib/api/clientApi";
+import { checkSession, getMe } from "../../lib/api/clientApi";
 
 const PRIVATE_ROUTES = ["/profile", "/notes"];
 
@@ -18,8 +17,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const verify = async () => {
       try {
-        const user = await checkSession();
-        if (user) {
+        const session = await checkSession();
+        if (session) {
+          const user = await getMe();
           setUser(user);
         } else {
           clearIsAuthenticated();
@@ -32,12 +32,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         setLoading(false);
       }
     };
-
     verify();
   }, [pathname]);
 
   if (loading) return <p>Loading...</p>;
   if (isPrivate && !isAuthenticated) return null;
-
   return <>{children}</>;
 }
