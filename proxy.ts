@@ -28,11 +28,25 @@ export async function proxy(request: NextRequest) {
           return NextResponse.redirect(new URL("/sign-in", request.url));
         }
 
-        const setCookieHeader = res.headers.get("set-cookie");
         const response = NextResponse.next();
+        const setCookieHeader = res.headers.get("set-cookie");
 
         if (setCookieHeader) {
-          response.headers.set("set-cookie", setCookieHeader);
+          const cookies = setCookieHeader.split(",").map((c) => c.trim());
+          cookies.forEach((cookie) => {
+            const [nameValue, ...attributes] = cookie.split(";").map((s) => s.trim());
+            const [name, value] = nameValue.split("=");
+            const httpOnly = attributes.some((a) => a.toLowerCase() === "httponly");
+            const secure = attributes.some((a) => a.toLowerCase() === "secure");
+            const sameSiteAttr = attributes.find((a) => a.toLowerCase().startsWith("samesite"));
+            const sameSite = sameSiteAttr
+              ? (sameSiteAttr.split("=")[1].trim().toLowerCase() as "lax" | "strict" | "none")
+              : "lax";
+            const pathAttr = attributes.find((a) => a.toLowerCase().startsWith("path"));
+            const path = pathAttr ? pathAttr.split("=")[1].trim() : "/";
+
+            response.cookies.set(name, value, { httpOnly, secure, sameSite, path });
+          });
         }
 
         return response;
